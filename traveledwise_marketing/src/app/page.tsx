@@ -20,7 +20,7 @@ export default function DashboardPage() {
           Welcome back, <span className="gradient-text">CMO</span>
         </h1>
         <p className="text-sm text-muted-foreground">
-          Your AI marketing engine is ready. Search, create, and deploy travel campaigns.
+          Real-time travel intelligence. Search, create, and deploy campaigns backed by Google Trends data.
         </p>
       </motion.div>
 

@@ -66,9 +66,9 @@ export function TrendsGrid() {
             {/* Header */}
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-lg font-bold">Trending Destinations</h2>
+                    <h2 className="text-lg font-bold">Trending Right Now</h2>
                     <p className="text-sm text-muted-foreground">
-                        Search any destination, niche, or category — powered by Gemini AI
+                        Real-time travel destinations trending on Google — powered by Gemini + Search Grounding
                     </p>
                 </div>
                 <Button

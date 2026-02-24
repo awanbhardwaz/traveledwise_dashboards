@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { TrendingUp, Star, ExternalLink, DollarSign, MapPin } from 'lucide-react';
+import { TrendingUp, Star, MapPin } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useCampaignStore } from '@/lib/store/campaign-store';
@@ -49,12 +49,6 @@ export function TrendCard({ trend, index }: { trend: Trend; index: number }) {
         setMediaClips(generateMockMedia(trend.name));
         setAffiliateLinks(generateMockLinks(trend.name));
         router.push('/campaigns');
-    };
-
-    const getScoreColor = (score: number) => {
-        if (score >= 90) return 'text-green-400';
-        if (score >= 75) return 'text-yellow-400';
-        return 'text-orange-400';
     };
 
     return (
