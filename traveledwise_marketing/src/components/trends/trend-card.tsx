@@ -9,6 +9,35 @@ import type { Trend } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { generateMockScripts, generateMockMedia, generateMockLinks } from '@/lib/agent/campaign';
 
+function Sparkline({ data }: { data: number[] }) {
+    if (!data.length) return null;
+    const max = Math.max(...data);
+    const min = Math.min(...data);
+    const range = max - min || 1;
+    const points = data.map((val, i) => ({
+        x: (i / (data.length - 1)) * 64,
+        y: 32 - ((val - min) / range) * 24 - 4, // 24 is max height, 4 is padding
+    }));
+
+    const pathData = `M ${points.map((p) => `${p.x},${p.y}`).join(' L ')}`;
+
+    return (
+        <svg width="64" height="32" viewBox="0 0 64 32" className="overflow-visible">
+            <motion.path
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ duration: 1.5, ease: 'easeOut' }}
+                d={pathData}
+                fill="none"
+                stroke="oklch(0.72 0.19 250)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
+    );
+}
+
 export function TrendCard({ trend, index }: { trend: Trend; index: number }) {
     const { hydrateFromTrend, setScripts, setMediaClips, setAffiliateLinks } = useCampaignStore();
     const router = useRouter();
@@ -55,19 +84,29 @@ export function TrendCard({ trend, index }: { trend: Trend; index: number }) {
 
                 <div className="space-y-3 p-4">
                     {/* Title & Volume */}
-                    <div>
-                        <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                            {trend.name}
-                        </h3>
-                        <div className="mt-1 flex items-center gap-2">
-                            <TrendingUp className="h-3.5 w-3.5 text-green-400" />
-                            <span className="text-xs text-muted-foreground">
-                                {trend.searchVolume.toLocaleString()} searches/mo
-                            </span>
-                            <span className="text-xs font-medium text-green-400">
-                                +{trend.volumeChange}%
-                            </span>
+                    <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                                {trend.name}
+                            </h3>
+                            <div className="mt-1 flex items-center gap-2">
+                                <TrendingUp className="h-3.5 w-3.5 text-green-400" />
+                                <span className="text-xs text-muted-foreground">
+                                    {trend.searchVolume.toLocaleString()} searches/mo
+                                </span>
+                                <span className="text-xs font-medium text-green-400">
+                                    +{trend.volumeChange}%
+                                </span>
+                            </div>
                         </div>
+                        {/* Sparkline */}
+                        <div className="h-8 w-16 pt-1">
+                            <Sparkline data={trend.trendHistory} />
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-1 opacity-60">
+                        <div className="h-1 w-1 rounded-full bg-blue-400" />
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Google Trends Grounded</span>
                     </div>
 
                     {/* Top Tours */}
@@ -87,25 +126,29 @@ export function TrendCard({ trend, index }: { trend: Trend; index: number }) {
                         ))}
                     </div>
 
-                    {/* Revenue Score */}
-                    <div className="flex items-center justify-between pt-1">
-                        <div className="flex items-center gap-1.5">
-                            <DollarSign className="h-4 w-4 text-primary" />
-                            <span className="text-xs text-muted-foreground">Revenue Potential</span>
+                    {/* Market Intelligence */}
+                    <div className="space-y-3 border-t border-border/50 pt-3">
+                        <div className="space-y-1">
+                            <span className="text-[10px] uppercase tracking-wider text-primary font-bold">Catalyst</span>
+                            <p className="text-xs leading-relaxed text-foreground/90">{trend.whyTrending}</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <div className="h-1.5 w-20 overflow-hidden rounded-full bg-background">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${trend.revenueScore}%` }}
-                                    transition={{ delay: index * 0.08 + 0.3, duration: 0.6, ease: 'easeOut' }}
-                                    className={`h-full rounded-full ${trend.revenueScore >= 90 ? 'bg-green-400' : trend.revenueScore >= 75 ? 'bg-yellow-400' : 'bg-orange-400'
-                                        }`}
-                                />
+
+                        <div className="space-y-1">
+                            <span className="text-[10px] uppercase tracking-wider text-destructive font-bold">Friction Point</span>
+                            <p className="text-xs leading-relaxed text-muted-foreground">{trend.frictionPoint}</p>
+                        </div>
+
+                        {/* Human Signals */}
+                        <div className="space-y-1.5 pt-1">
+                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Human Signals (Last 30 Days)</span>
+                            <div className="flex flex-wrap gap-1.5">
+                                {trend.humanSignals.slice(0, 2).map((sig, i) => (
+                                    <div key={i} className="flex items-center gap-1.5 rounded-md bg-secondary/50 px-2 py-1 text-[10px] border border-border/50">
+                                        <span className="font-bold text-primary">{sig.source}</span>
+                                        <span className="truncate max-w-[120px] italic">"{sig.snippet}"</span>
+                                    </div>
+                                ))}
                             </div>
-                            <span className={`text-xs font-bold ${getScoreColor(trend.revenueScore)}`}>
-                                {trend.revenueScore}
-                            </span>
                         </div>
                     </div>
                 </div>

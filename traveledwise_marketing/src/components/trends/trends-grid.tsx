@@ -25,6 +25,11 @@ export function TrendsGrid() {
                 ? `/api/trends?q=${encodeURIComponent(query)}`
                 : '/api/trends';
             const res = await fetch(url);
+            if (!res.ok) {
+                console.error(`Trends API returned ${res.status}: ${res.statusText}`);
+                setTrends([]);
+                return;
+            }
             const data = await res.json();
             setTrends(data.trends ?? []);
         } catch (error) {

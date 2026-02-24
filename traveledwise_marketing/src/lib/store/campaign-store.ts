@@ -144,6 +144,18 @@ export const useCampaignStore = create<CampaignStore>((set) => ({
                     type: 'grounding',
                     content: `📊 Search volume: ${trend.searchVolume.toLocaleString()} (+${trend.volumeChange}%)`,
                 },
+                {
+                    id: crypto.randomUUID(),
+                    timestamp: new Date().toISOString(),
+                    type: 'analysis',
+                    content: `🔥 Catalyst: ${trend.whyTrending}`,
+                },
+                {
+                    id: crypto.randomUUID(),
+                    timestamp: new Date().toISOString(),
+                    type: 'analysis',
+                    content: `⚠️ Friction: ${trend.frictionPoint}`,
+                },
             ],
         },
     })),

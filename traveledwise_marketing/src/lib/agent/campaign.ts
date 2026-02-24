@@ -80,7 +80,7 @@ export function generateMockMedia(destination: string): MediaClip[] {
         {
             id: `media_${Date.now()}_0`,
             url: 'https://videos.pexels.com/video-files/3015510/3015510-hd_1920_1080_24fps.mp4',
-            thumbnailUrl: `https://source.unsplash.com/featured/400x300/?${encodeURIComponent(destination + ' beach')}`,
+            thumbnailUrl: `https://loremflickr.com/400/300/travel,beach,${encodeURIComponent(destination)}`,
             title: `${destination} Mood Video`,
             duration: 15,
             source: 'Pexels',
@@ -89,7 +89,7 @@ export function generateMockMedia(destination: string): MediaClip[] {
         {
             id: `media_${Date.now()}_1`,
             url: 'https://videos.pexels.com/video-files/2169880/2169880-hd_1920_1080_30fps.mp4',
-            thumbnailUrl: `https://source.unsplash.com/featured/400x300/?${encodeURIComponent(destination + ' architecture')}`,
+            thumbnailUrl: `https://loremflickr.com/400/300/travel,luxury,${encodeURIComponent(destination)}`,
             title: `${destination} Luxury Scene`,
             duration: 12,
             source: 'Pexels',

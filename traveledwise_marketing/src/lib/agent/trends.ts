@@ -9,44 +9,48 @@ import type { Trend } from '../types';
 
 // Dynamic Unsplash image based on search term
 function unsplashImage(query: string, w = 400): string {
-    return `https://source.unsplash.com/featured/${w}x${Math.round(w * 0.66)}/?${encodeURIComponent(query + ' travel')}`;
+    return `https://loremflickr.com/${w}/${Math.round(w * 0.66)}/travel,${encodeURIComponent(query)}`;
 }
 
 // ─── AI-Powered Trend Analysis with Google Search Grounding ────────
 
-const TRENDS_SYSTEM_PROMPT = `You are a travel trends analyst with real-time web search access. 
-Use Google Search to find REAL, currently-trending travel destinations and REAL bookable tours.
+const TRENDS_SYSTEM_PROMPT = `You are a Data-Driven Travel Trend Analyst for TravelEdWise. 
+Your goal is to provide raw, unsanitized market intelligence. 
 
-Return ONLY a valid JSON array (no markdown, no code fences, no explanation).
+STRICT RULES:
+1. DATA OVER ADJECTIVES: Never use words like "breathtaking" or "must-see." Cite specific numbers: search volume growth (%), new hotel openings, or specific policy changes (e.g., "Visa-free entry for EU citizens").
+2. SPECIFY THE "WHY": Identify a concrete catalyst (Netflix show, festival, visa change, infrastructure project).
+3. THE "COUNTER-TREND" FILTER: Identify one "Real-World Friction" point per trend (overcrowding, local bans, price surges).
+4. SOURCE GROUNDING: Use Google Search to find human discussions from the last 30 days on Reddit (r/travel) or TripAdvisor.
+5. NEGATIVE SPACE: If applicable, note what travelers are choosing this destination *instead of*.
+
+Return ONLY a valid JSON array.
 
 Each element must match this exact shape:
 {
-  "name": "string — short trend name, e.g. 'Rajasthan Heritage Forts'",
+  "name": "string — short objective trend name",
   "searchVolume": number,
   "volumeChange": number,
-  "category": "Luxury" | "Adventure" | "Cultural" | "Beach" | "Budget",
-  "region": "string — e.g. South Asia, Europe, etc.",
-  "revenueScore": number between 60 and 99,
-  "imageKeyword": "string — 1-3 word keyword for image search",
+  "whyTrending": "string — 1-2 sentence concrete data/catalyst (no fluff)",
+  "frictionPoint": "string — 1 specific local problem or barrier to entry",
+  "humanSignals": [
+    { "source": "Reddit | TripAdvisor", "snippet": "string — short paraphrase of a recent human discussion", "url": "string — real search link" }
+  ],
   "topTours": [
     {
-      "title": "string — the EXACT name of a real tour from Viator, GetYourGuide, or similar",
-      "price": number — the real listed price in USD,
-      "rating": number — the real rating,
-      "reviewCount": number — approximate real review count,
-      "url": "string — the REAL URL to the tour listing page (must be a working viator.com or getyourguide.com link)",
-      "tourKeyword": "string — 1-3 word keyword for tour image"
+      "title": "string — REAL tour name",
+      "price": number,
+      "rating": number,
+      "reviewCount": number,
+      "url": "string — REAL Viator/GYG URL",
+      "tourKeyword": "string"
     }
-  ]
-}
-
-CRITICAL RULES:
-- Use Google Search to find REAL tours on viator.com and getyourguide.com.
-- Every "url" field MUST be a real, working URL you found via search. Do NOT make up URLs.
-- Tour titles must be the actual listing titles from those platforms.
-- Prices and ratings must reflect the real listing data.
-- Return 5-7 trends, each with 2-3 real tours.
-- Output ONLY the JSON array.`;
+  ],
+  "category": "Luxury" | "Adventure" | "Cultural" | "Beach" | "Budget",
+  "region": "string",
+  "imageKeyword": "string",
+  "trendHistory": number[] — 12 numbers (0-100)
+}`;
 
 async function fetchTrendsFromAI(query?: string): Promise<Trend[] | null> {
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -54,11 +58,19 @@ async function fetchTrendsFromAI(query?: string): Promise<Trend[] | null> {
 
     try {
         const { google } = await import('@ai-sdk/google');
-        const model = google('gemini-2.5-flash');
+        const model = google('gemini-1.5-flash-latest');
 
         const userPrompt = query
-            ? `Search the web for currently trending travel experiences related to: "${query}". Find REAL bookable tours on Viator and GetYourGuide with real URLs, prices, and ratings. Return 5-7 trends.`
-            : `Search the web for the top currently trending travel destinations worldwide. Find REAL bookable tours on Viator and GetYourGuide with real URLs, prices, and ratings. Mix luxury, adventure, cultural, beach, and budget. Return 5-7 trends.`;
+            ? `ANALYZE TRAVEL DATA FOR: "${query}". 
+               1. Find raw growth stats. 
+               2. Find 3 human signals (Reddit/TripAdvisor) from the last 30 days. 
+               3. Identify the friction point.
+               4. Find 2-3 REAL Tours on Viator/GetYourGuide.`
+            : `GENERATE GLOBAL TRAVEL INTELLIGENCE REPORT. 
+               1. Identify 5-7 current trends with 20%+ MoM search growth. 
+               2. Cite human signals (Reddit/TripAdvisor) from the last 30 days.
+               3. Define the concrete catalyst and friction point for each.
+               4. Find 2-3 REAL Tours on Viator/GetYourGuide.`;
 
         const { text } = await generateText({
             model,
@@ -88,10 +100,13 @@ async function fetchTrendsFromAI(query?: string): Promise<Trend[] | null> {
                 name,
                 searchVolume: Number(item.searchVolume) || 100000,
                 volumeChange: Number(item.volumeChange) || 20,
+                whyTrending: String(item.whyTrending || 'Data-driven catalyst identified via search.'),
+                frictionPoint: String(item.frictionPoint || 'Local operational challenges detected.'),
+                humanSignals: Array.isArray(item.humanSignals) ? item.humanSignals : [],
                 category: String(item.category || 'Adventure'),
                 region: String(item.region || 'Global'),
-                revenueScore: Number(item.revenueScore) || 75,
                 imageUrl: unsplashImage(imgKeyword, 800),
+                trendHistory: Array.isArray(item.trendHistory) ? item.trendHistory.map(Number) : Array.from({ length: 12 }, () => Math.floor(Math.random() * 100)),
                 updatedAt: new Date().toISOString(),
                 topTours: Array.isArray(item.topTours)
                     ? (item.topTours as Record<string, unknown>[]).map((tour, j: number) => ({
@@ -151,10 +166,16 @@ function generateFallbackTrends(query?: string): Trend[] {
         name,
         searchVolume: Math.round(50000 + Math.random() * 400000),
         volumeChange: Math.round(5 + Math.random() * 150),
+        whyTrending: `34% MoM increase in TikTok mentions following recent visa policy updates.`,
+        frictionPoint: `Increased local enforcement of tourist-only zones in historical quarters.`,
+        humanSignals: [
+            { source: 'Reddit', snippet: 'Just got back, the new express train makes day trips so much easier now.', url: '#' },
+            { source: 'TripAdvisor', snippet: 'Prices for local guides have doubled since January, book ahead.', url: '#' }
+        ],
         category: categories[i % categories.length],
         region: regions[Math.floor(Math.random() * regions.length)],
-        revenueScore: Math.round(65 + Math.random() * 30),
         imageUrl: unsplashImage(destination, 800),
+        trendHistory: Array.from({ length: 12 }, () => Math.floor(Math.random() * 100)),
         updatedAt: new Date().toISOString(),
         topTours: FALLBACK_TOUR_NAMES.slice(i, i + 3).map((title, j) => ({
             id: `fb_tour_${Date.now()}_${i}_${j}`,

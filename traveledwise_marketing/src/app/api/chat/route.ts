@@ -33,7 +33,7 @@ export async function POST(req: Request) {
 
     // Use real Gemini model when API key is available
     const { google } = await import('@ai-sdk/google');
-    const model = google('gemini-2.5-flash');
+    const model = google('gemini-1.5-flash-latest');
 
     const result = streamText({
         model,

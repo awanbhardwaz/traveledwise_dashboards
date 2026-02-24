@@ -6,10 +6,13 @@ export interface Trend {
     searchVolume: number;
     volumeChange: number; // percentage
     topTours: ViatorTour[];
-    revenueScore: number; // 0-100
+    whyTrending: string; // Data-driven reason (specific event/policy)
+    frictionPoint: string; // Real-world problem/counter-trend
+    humanSignals: { source: string; snippet: string; url: string }[]; // Reddit/TripAdvisor sources
     category: string;
     region: string;
     imageUrl: string;
+    trendHistory: number[]; // For sparklines (Google Trends style)
     updatedAt: string;
 }
 
