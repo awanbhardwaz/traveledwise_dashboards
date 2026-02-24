@@ -16,7 +16,11 @@ interface PexelsPhoto {
 
 async function searchPexelsApi(query: string): Promise<PexelsPhoto | null> {
     const key = process.env.PEXELS_API_KEY;
-    if (!key) return null;
+    if (!key) {
+        console.log('Pexels API: No key found, using curated fallback.');
+        return null;
+    }
+    console.log(`Pexels API: Searching for "${query}"...`);
 
     try {
         const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query + ' travel')}&per_page=1&orientation=landscape`;

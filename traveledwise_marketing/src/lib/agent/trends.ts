@@ -66,6 +66,7 @@ async function fetchTrendsFromAI(query?: string): Promise<Trend[] | null> {
             ? `Search Google Trends and the web for travel destinations related to "${query}" that are genuinely trending right now. Return 6 real destinations with real data.`
             : `Search Google Trends for the 6 most trending travel destinations worldwide right now (February 2026). Only include destinations with significant recent search growth. Return 6 real destinations.`;
 
+        console.log(`AI Agent: Starting generation with grounding...`);
         const { text } = await generateText({
             model,
             system: SYSTEM_PROMPT,
@@ -74,6 +75,7 @@ async function fetchTrendsFromAI(query?: string): Promise<Trend[] | null> {
                 google_search: google.tools.googleSearch({}),
             },
         });
+        console.log(`AI Agent: Generation complete. Text length: ${text.length}`);
 
         // Robust JSON extraction — AI sometimes adds extra text or malformed trailing commas
         let cleaned = text
