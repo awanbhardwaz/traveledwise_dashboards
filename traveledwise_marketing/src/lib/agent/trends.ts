@@ -1,0 +1,261 @@
+/**
+ * Trends Agent
+ * Analyzes travel trends and returns structured trend data.
+ * Uses Gemini with Google Search grounding for real-time data.
+ */
+
+import type { Trend } from '../types';
+
+// Mock trending data for when AI is not available
+const MOCK_TRENDS: Trend[] = [
+    {
+        id: 'trend_001',
+        name: 'Bali Luxury Villas',
+        searchVolume: 245000,
+        volumeChange: 34,
+        topTours: [
+            {
+                id: 'vt_001',
+                title: 'Bali Instagram Tour: Lempuyang Temple & Waterfall',
+                price: 65,
+                rating: 4.8,
+                reviewCount: 3420,
+                url: 'https://www.viator.com/tours/Bali/Instagram-Tour',
+                imageUrl: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400',
+            },
+            {
+                id: 'vt_002',
+                title: 'Ubud: Sacred Monkey Forest & Rice Terrace Tour',
+                price: 45,
+                rating: 4.7,
+                reviewCount: 2180,
+                url: 'https://www.viator.com/tours/Bali/Ubud-Tour',
+                imageUrl: 'https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=400',
+            },
+            {
+                id: 'vt_003',
+                title: 'Bali: Mount Batur Sunrise Trek with Breakfast',
+                price: 55,
+                rating: 4.9,
+                reviewCount: 5640,
+                url: 'https://www.viator.com/tours/Bali/Mount-Batur',
+                imageUrl: 'https://images.unsplash.com/photo-1604999333679-b86d54738315?w=400',
+            },
+        ],
+        revenueScore: 92,
+        category: 'Luxury',
+        region: 'Southeast Asia',
+        imageUrl: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800',
+        updatedAt: new Date().toISOString(),
+    },
+    {
+        id: 'trend_002',
+        name: 'Japan Cherry Blossom',
+        searchVolume: 890000,
+        volumeChange: 156,
+        topTours: [
+            {
+                id: 'vt_004',
+                title: 'Tokyo: Cherry Blossom Night Walking Tour',
+                price: 38,
+                rating: 4.9,
+                reviewCount: 4230,
+                url: 'https://www.viator.com/tours/Tokyo/Cherry-Blossom',
+                imageUrl: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400',
+            },
+            {
+                id: 'vt_005',
+                title: 'Kyoto: Geisha District & Temple Cherry Blossom Walk',
+                price: 52,
+                rating: 4.8,
+                reviewCount: 2890,
+                url: 'https://www.viator.com/tours/Kyoto/Geisha-District',
+                imageUrl: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400',
+            },
+            {
+                id: 'vt_006',
+                title: 'Mt. Fuji & Hakone Full Day Tour with Cherry Blossom',
+                price: 128,
+                rating: 4.7,
+                reviewCount: 6120,
+                url: 'https://www.viator.com/tours/Tokyo/Mt-Fuji',
+                imageUrl: 'https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?w=400',
+            },
+        ],
+        revenueScore: 98,
+        category: 'Cultural',
+        region: 'East Asia',
+        imageUrl: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800',
+        updatedAt: new Date().toISOString(),
+    },
+    {
+        id: 'trend_003',
+        name: 'Amalfi Coast Road Trip',
+        searchVolume: 178000,
+        volumeChange: 42,
+        topTours: [
+            {
+                id: 'vt_007',
+                title: 'Amalfi Coast: Private Boat Tour from Positano',
+                price: 195,
+                rating: 4.9,
+                reviewCount: 1850,
+                url: 'https://www.viator.com/tours/Positano/Boat-Tour',
+                imageUrl: 'https://images.unsplash.com/photo-1534008897995-27a23e859048?w=400',
+            },
+            {
+                id: 'vt_008',
+                title: 'Pompeii and Amalfi Coast Day Trip from Rome',
+                price: 145,
+                rating: 4.6,
+                reviewCount: 3200,
+                url: 'https://www.viator.com/tours/Rome/Pompeii-Amalfi',
+                imageUrl: 'https://images.unsplash.com/photo-1633321702518-7fafe1a90465?w=400',
+            },
+            {
+                id: 'vt_009',
+                title: 'Ravello, Amalfi & Positano: Full-Day Tour',
+                price: 88,
+                rating: 4.8,
+                reviewCount: 2450,
+                url: 'https://www.viator.com/tours/Sorrento/Amalfi-Tour',
+                imageUrl: 'https://images.unsplash.com/photo-1612698093158-e07ac200d44e?w=400',
+            },
+        ],
+        revenueScore: 87,
+        category: 'Luxury',
+        region: 'Europe',
+        imageUrl: 'https://images.unsplash.com/photo-1534008897995-27a23e859048?w=800',
+        updatedAt: new Date().toISOString(),
+    },
+    {
+        id: 'trend_004',
+        name: 'Iceland Northern Lights',
+        searchVolume: 320000,
+        volumeChange: 67,
+        topTours: [
+            {
+                id: 'vt_010',
+                title: 'Reykjavik: Northern Lights Bus Tour',
+                price: 65,
+                rating: 4.5,
+                reviewCount: 8900,
+                url: 'https://www.viator.com/tours/Reykjavik/Northern-Lights',
+                imageUrl: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=400',
+            },
+            {
+                id: 'vt_011',
+                title: 'Golden Circle & Secret Lagoon Full-Day Tour',
+                price: 95,
+                rating: 4.8,
+                reviewCount: 5600,
+                url: 'https://www.viator.com/tours/Reykjavik/Golden-Circle',
+                imageUrl: 'https://images.unsplash.com/photo-1504893524553-b855bce32c67?w=400',
+            },
+            {
+                id: 'vt_012',
+                title: 'Blue Lagoon Comfort Entry with Transfer',
+                price: 115,
+                rating: 4.7,
+                reviewCount: 12300,
+                url: 'https://www.viator.com/tours/Reykjavik/Blue-Lagoon',
+                imageUrl: 'https://images.unsplash.com/photo-1515238152791-8216bfdf89a7?w=400',
+            },
+        ],
+        revenueScore: 85,
+        category: 'Adventure',
+        region: 'Europe',
+        imageUrl: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=800',
+        updatedAt: new Date().toISOString(),
+    },
+    {
+        id: 'trend_005',
+        name: 'Dubai Desert Safari',
+        searchVolume: 412000,
+        volumeChange: 28,
+        topTours: [
+            {
+                id: 'vt_013',
+                title: 'Dubai: Premium Red Dune Desert Safari',
+                price: 79,
+                rating: 4.8,
+                reviewCount: 15600,
+                url: 'https://www.viator.com/tours/Dubai/Desert-Safari',
+                imageUrl: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400',
+            },
+            {
+                id: 'vt_014',
+                title: 'Burj Khalifa: At the Top (124th & 125th Floor)',
+                price: 42,
+                rating: 4.6,
+                reviewCount: 23400,
+                url: 'https://www.viator.com/tours/Dubai/Burj-Khalifa',
+                imageUrl: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?w=400',
+            },
+            {
+                id: 'vt_015',
+                title: 'Abu Dhabi: Sheikh Zayed Mosque & City Tour',
+                price: 55,
+                rating: 4.7,
+                reviewCount: 8900,
+                url: 'https://www.viator.com/tours/Dubai/Abu-Dhabi-Tour',
+                imageUrl: 'https://images.unsplash.com/photo-1597659840241-37e2b9c2f55f?w=400',
+            },
+        ],
+        revenueScore: 90,
+        category: 'Adventure',
+        region: 'Middle East',
+        imageUrl: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800',
+        updatedAt: new Date().toISOString(),
+    },
+    {
+        id: 'trend_006',
+        name: 'Tulum Cenotes',
+        searchVolume: 156000,
+        volumeChange: 89,
+        topTours: [
+            {
+                id: 'vt_016',
+                title: 'Tulum: 4 Cenotes Adventure Tour',
+                price: 75,
+                rating: 4.9,
+                reviewCount: 4200,
+                url: 'https://www.viator.com/tours/Tulum/Cenotes',
+                imageUrl: 'https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?w=400',
+            },
+            {
+                id: 'vt_017',
+                title: 'Chichen Itza, Cenote & Valladolid Day Trip',
+                price: 65,
+                rating: 4.7,
+                reviewCount: 11200,
+                url: 'https://www.viator.com/tours/Cancun/Chichen-Itza',
+                imageUrl: 'https://images.unsplash.com/photo-1518638150340-f706e86654de?w=400',
+            },
+            {
+                id: 'vt_018',
+                title: 'Tulum Ruins & Reef Snorkeling Combo',
+                price: 89,
+                rating: 4.8,
+                reviewCount: 3100,
+                url: 'https://www.viator.com/tours/Tulum/Ruins-Snorkel',
+                imageUrl: 'https://images.unsplash.com/photo-1585208798174-6cedd86e019a?w=400',
+            },
+        ],
+        revenueScore: 82,
+        category: 'Adventure',
+        region: 'Americas',
+        imageUrl: 'https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?w=800',
+        updatedAt: new Date().toISOString(),
+    },
+];
+
+export async function analyzeTrends(): Promise<Trend[]> {
+    // Simulate analysis delay
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    return MOCK_TRENDS;
+}
+
+export function getMockTrends(): Trend[] {
+    return MOCK_TRENDS;
+}
