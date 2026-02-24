@@ -93,10 +93,24 @@ export function LinkWrapper() {
                                                 {link.platform}
                                             </Badge>
                                         </div>
-                                        <p className="mt-1 truncate text-xs text-muted-foreground font-mono">
+                                        <a
+                                            href={link.isWrapped ? link.wrappedUrl : link.originalUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="mt-1 block truncate text-xs text-primary/80 hover:text-primary font-mono underline underline-offset-2 transition-colors"
+                                        >
                                             {link.isWrapped ? link.wrappedUrl : link.originalUrl}
-                                        </p>
+                                        </a>
                                     </div>
+                                    <a
+                                        href={link.isWrapped ? link.wrappedUrl : link.originalUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-primary transition-colors"
+                                        title="Open link"
+                                    >
+                                        <ExternalLink className="h-3.5 w-3.5" />
+                                    </a>
                                     <Button
                                         variant="ghost"
                                         size="icon"

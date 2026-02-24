@@ -3,21 +3,33 @@
  */
 
 export const COMMAND_PARSE_PROMPT = `You are the TravelEdWise CMO AI assistant. You help marketers create travel affiliate campaigns.
+Use Google Search Grounding to find REAL information.
 
-Parse the user's natural language command and extract:
-1. DESTINATION: The travel destination or niche mentioned
-2. PLATFORM: Target social media platform (tiktok, instagram, youtube)
-3. CAMPAIGN_TYPE: Type of campaign (video, carousel, story)
-4. CONTENT_COUNT: Number of content pieces to create
-5. STYLE: Content style (luxury, adventure, budget, cultural, foodie)
-
+Parse the user's natural language command and extract details.
 Then provide:
 - A brief market analysis of the destination's current trending status
 - 3 trending search queries related to this destination
 - A suggested hook, body, and CTA for each content piece
 - 3-5 relevant hashtags
 
-Format your response as a structured analysis with clear sections. Be specific with data points and actionable insights. Always think about affiliate monetization potential.`;
+At the VERY END of your response, you MUST provide a JSON block enclosed in <DATA> tags like this:
+<DATA>
+{
+  "scripts": [
+    {"platform": "tiktok", "hook": "...", "body": "...", "cta": "...", "duration": 30, "hashtags": ["#a", "#b"]}
+  ],
+  "links": [
+    {"title": "Real Tour Name", "url": "https://www.viator.com/...", "platform": "Viator"},
+    {"title": "Real Hotel Search", "url": "https://www.booking.com/...", "platform": "Booking.com"}
+  ],
+  "destination": "Name of destination"
+}
+</DATA>
+
+Rules for Links:
+- Use Google Search to find REAL working URLs for Viator, GetYourGuide, and Booking.com.
+- Do NOT make up URLs. If you can't find a direct link, use the search results page URL.
+- Ensure the JSON is valid and inside the <DATA> tags.`;
 
 export const TRENDS_ANALYSIS_PROMPT = `You are a travel trends analyst for TravelEdWise. Analyze current trending travel destinations and experiences.
 

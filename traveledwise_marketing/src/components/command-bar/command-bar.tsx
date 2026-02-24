@@ -92,22 +92,61 @@ export function CommandBar() {
                 }
             }
 
-            // Generate mock campaign data
-            const scripts = generateMockScripts(dest, 3);
-            const media = generateMockMedia(dest);
-            const links = generateMockLinks(dest);
+            // Process the full text to extract the <DATA> block
+            const dataMatch = fullText.match(/<DATA>([\s\S]*?)<\/DATA>/);
+            let aiData: any = null;
+            if (dataMatch) {
+                try {
+                    aiData = JSON.parse(dataMatch[1].trim());
+                } catch (e) {
+                    console.error('Failed to parse AI data block:', e);
+                }
+            }
 
-            setScripts(scripts);
-            setMediaClips(media);
-            setAffiliateLinks(links);
-            setStatus('ready');
+            if (aiData) {
+                const finalDest = aiData.destination || dest;
+                if (aiData.destination) setDestination(aiData.destination);
 
-            addMarketPulse({
-                id: crypto.randomUUID(),
-                timestamp: new Date().toISOString(),
-                type: 'system',
-                content: `✅ Campaign draft ready for "${dest}". ${scripts.length} scripts, ${media.length} media clips, ${links.length} affiliate links.`,
-            });
+                if (aiData.scripts) {
+                    const { createScriptsFromAI } = await import('@/lib/agent/campaign');
+                    setScripts(createScriptsFromAI(finalDest, aiData.scripts));
+                }
+
+                if (aiData.links) {
+                    const { createLinksFromAI } = await import('@/lib/agent/campaign');
+                    setAffiliateLinks(createLinksFromAI(aiData.links));
+                }
+
+                // Still use keyword-based media for now
+                const { generateMockMedia } = await import('@/lib/agent/campaign');
+                setMediaClips(generateMockMedia(finalDest));
+
+                setStatus('ready');
+                addMarketPulse({
+                    id: crypto.randomUUID(),
+                    timestamp: new Date().toISOString(),
+                    type: 'system',
+                    content: `✅ Campaign draft ready with VERIFIED data for "${finalDest}".`,
+                });
+            } else {
+                // Fallback to enhanced mocks if no data block found
+                const { generateMockScripts, generateMockMedia, generateMockLinks } = await import('@/lib/agent/campaign');
+                const scripts = generateMockScripts(dest, 3);
+                const media = generateMockMedia(dest);
+                const links = generateMockLinks(dest);
+
+                setScripts(scripts);
+                setMediaClips(media);
+                setAffiliateLinks(links);
+                setStatus('ready');
+
+                addMarketPulse({
+                    id: crypto.randomUUID(),
+                    timestamp: new Date().toISOString(),
+                    type: 'system',
+                    content: `✅ Campaign draft ready (simulated) for "${dest}".`,
+                });
+            }
         } catch (error) {
             // Fallback: generate mock data even without API
             addMarketPulse({

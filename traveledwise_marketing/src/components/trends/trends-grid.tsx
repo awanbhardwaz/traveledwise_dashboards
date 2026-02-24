@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { RefreshCw, Filter } from 'lucide-react';
+import { RefreshCw, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { TrendCard } from './trend-card';
 import type { Trend } from '@/lib/types';
-import { getMockTrends } from '@/lib/agent/trends';
 
 const CATEGORIES = ['All', 'Luxury', 'Adventure', 'Cultural', 'Beach', 'Budget'];
 
@@ -15,17 +15,41 @@ export function TrendsGrid() {
     const [trends, setTrends] = useState<Trend[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeCategory, setActiveCategory] = useState('All');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchInput, setSearchInput] = useState('');
+
+    const loadTrends = useCallback(async (query?: string) => {
+        setLoading(true);
+        try {
+            const url = query
+                ? `/api/trends?q=${encodeURIComponent(query)}`
+                : '/api/trends';
+            const res = await fetch(url);
+            const data = await res.json();
+            setTrends(data.trends ?? []);
+        } catch (error) {
+            console.error('Failed to load trends:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
         loadTrends();
-    }, []);
+    }, [loadTrends]);
 
-    const loadTrends = async () => {
-        setLoading(true);
-        // Use mock data directly for instant loading
-        const data = getMockTrends();
-        setTrends(data);
-        setLoading(false);
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        const q = searchInput.trim();
+        setSearchQuery(q);
+        setActiveCategory('All');
+        loadTrends(q || undefined);
+    };
+
+    const clearSearch = () => {
+        setSearchInput('');
+        setSearchQuery('');
+        loadTrends();
     };
 
     const filteredTrends = activeCategory === 'All'
@@ -39,13 +63,13 @@ export function TrendsGrid() {
                 <div>
                     <h2 className="text-lg font-bold">Trending Destinations</h2>
                     <p className="text-sm text-muted-foreground">
-                        Click any trend to hydrate your campaign workspace
+                        Search any destination, niche, or category — powered by Gemini AI
                     </p>
                 </div>
                 <Button
                     variant="outline"
                     size="sm"
-                    onClick={loadTrends}
+                    onClick={() => loadTrends(searchQuery || undefined)}
                     disabled={loading}
                     className="gap-2"
                 >
@@ -54,6 +78,53 @@ export function TrendsGrid() {
                 </Button>
             </div>
 
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="relative">
+                <div className="relative flex items-center gap-2">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            type="text"
+                            placeholder="Search any destination or niche... (e.g. &quot;India&quot;, &quot;luxury beach&quot;, &quot;budget Europe&quot;)"
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            className="pl-10 pr-10 bg-card/50 border-border/50 focus:border-primary/50 transition-colors"
+                        />
+                        {searchInput && (
+                            <button
+                                type="button"
+                                onClick={clearSearch}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        )}
+                    </div>
+                    <Button type="submit" size="sm" disabled={loading} className="gap-2 shrink-0">
+                        <Search className="h-4 w-4" />
+                        Search
+                    </Button>
+                </div>
+                {searchQuery && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"
+                    >
+                        <span>
+                            Showing AI-powered results for <span className="font-medium text-foreground">&ldquo;{searchQuery}&rdquo;</span>
+                        </span>
+                        <button
+                            type="button"
+                            onClick={clearSearch}
+                            className="underline hover:text-foreground transition-colors"
+                        >
+                            Clear
+                        </button>
+                    </motion.div>
+                )}
+            </form>
+
             {/* Category Filters */}
             <div className="flex flex-wrap gap-2">
                 {CATEGORIES.map((cat) => (
@@ -61,8 +132,8 @@ export function TrendsGrid() {
                         key={cat}
                         variant={activeCategory === cat ? 'default' : 'outline'}
                         className={`cursor-pointer transition-all ${activeCategory === cat
-                                ? 'bg-primary text-primary-foreground'
-                                : 'hover:border-primary/30'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'hover:border-primary/30'
                             }`}
                         onClick={() => setActiveCategory(cat)}
                     >
@@ -78,6 +149,21 @@ export function TrendsGrid() {
                         <div key={i} className="h-72 rounded-xl shimmer" />
                     ))}
                 </div>
+            ) : filteredTrends.length === 0 ? (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex flex-col items-center justify-center py-16 text-center"
+                >
+                    <Search className="h-10 w-10 text-muted-foreground/40 mb-3" />
+                    <p className="text-muted-foreground font-medium">No trends found</p>
+                    <p className="text-sm text-muted-foreground/60 mt-1">
+                        Try a different search term or category
+                    </p>
+                    <Button variant="outline" size="sm" className="mt-4" onClick={clearSearch}>
+                        Show all trends
+                    </Button>
+                </motion.div>
             ) : (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {filteredTrends.map((trend, i) => (

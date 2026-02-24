@@ -1,9 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { analyzeTrends } from '@/lib/agent/trends';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
     try {
-        const trends = await analyzeTrends();
+        const query = req.nextUrl.searchParams.get('q') || undefined;
+        const trends = await analyzeTrends(query);
         return NextResponse.json({ trends, updatedAt: new Date().toISOString() });
     } catch (error) {
         console.error('Trends API error:', error);
